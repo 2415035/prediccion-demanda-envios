@@ -3,6 +3,7 @@
 import pandas as pd
 from supabase_config import supabase_client
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 import streamlit as st
 
 # Cargar datos de Supabase
@@ -13,7 +14,16 @@ envios = pd.DataFrame(response.data)
 envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
 envios['mes'] = envios['fecha_envio'].dt.month
 
-# Definir las características y el objetivo
+# Codificar variables categóricas usando LabelEncoder
+label_encoder = LabelEncoder()
+
+# Codificar cada columna categórica
+envios['id_region'] = label_encoder.fit_transform(envios['id_region'])
+envios['id_evento'] = label_encoder.fit_transform(envios['id_evento'])
+envios['id_tipo_servicio'] = label_encoder.fit_transform(envios['id_tipo_servicio'])
+envios['id_ruta'] = label_encoder.fit_transform(envios['id_ruta'])
+
+# Definir las características (X) y el objetivo (y)
 features = ['id_region', 'cantidad_envios', 'id_evento', 'id_tipo_servicio', 'id_ruta', 'mes']
 X = envios[features]
 y = envios['tarifa_promedio']
