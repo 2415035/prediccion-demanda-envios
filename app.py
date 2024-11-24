@@ -1,6 +1,7 @@
 import pandas as pd
 from supabase_config import supabase_client
-from sklearn.ensemble import RandomForestRegressor  # Cambiado a RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
 import streamlit as st
 
 # Cargar datos de Supabase
@@ -11,13 +12,20 @@ envios = pd.DataFrame(response.data)
 envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
 envios['mes'] = envios['fecha_envio'].dt.month
 
+# Codificar las columnas categóricas
+label_encoder = LabelEncoder()
+envios['id_region_encoded'] = label_encoder.fit_transform(envios['id_region'])
+envios['id_evento_encoded'] = label_encoder.fit_transform(envios['id_evento'])
+envios['id_tipo_servicio_encoded'] = label_encoder.fit_transform(envios['id_tipo_servicio'])
+envios['id_ruta_encoded'] = label_encoder.fit_transform(envios['id_ruta'])
+
 # Definir las características y el objetivo
-features = ['id_region', 'cantidad_envios', 'id_evento', 'id_tipo_servicio', 'id_ruta', 'mes']
+features = ['id_region_encoded', 'cantidad_envios', 'id_evento_encoded', 'id_tipo_servicio_encoded', 'id_ruta_encoded', 'mes']
 X = envios[features]
 y = envios['tarifa_promedio']
 
-# Entrenar el modelo de Random Forest (Regresión)
-rf = RandomForestRegressor(n_estimators=100, random_state=42)  # Usar regressor
+# Entrenar el modelo de Random Forest para regresión
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X, y)
 
 # Predicciones
