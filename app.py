@@ -16,7 +16,7 @@ regiones = pd.DataFrame(response_regiones.data)
 response_eventos = supabase_client.table('eventos').select('id_evento, nombre_evento').execute()
 eventos = pd.DataFrame(response_eventos.data)
 
-response_tipo_servicio = supabase_client.table('tipo_servicio').select('id_tipo_servicio, nombre_tipo_servicio').execute()
+response_tipo_servicio = supabase_client.table('tipos_servicio').select('id_tipo_servicio, nombre_tipo_servicio').execute()
 tipo_servicio = pd.DataFrame(response_tipo_servicio.data)
 
 response_rutas = supabase_client.table('rutas').select('id_ruta, nombre_ruta').execute()
