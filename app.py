@@ -3,81 +3,62 @@ from supabase_config import supabase_client
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
 import streamlit as st
-import numpy as np
 
-# Cargar datos desde Supabase
+# Cargar datos de Supabase
 response = supabase_client.table('envios').select('*').execute()
 envios = pd.DataFrame(response.data)
-
-# Validar si los datos fueron cargados
-if envios.empty:
-    st.error("No se pudieron cargar los datos de Supabase. Verifica tu conexión.")
-    st.stop()
 
 # Preprocesar datos
 envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
 envios['mes'] = envios['fecha_envio'].dt.month
 
-# Codificar columnas categóricas
+# Codificar las columnas categóricas
 label_encoder = LabelEncoder()
-
-# Asegurarse de que todos los valores están presentes antes del fit
-envios['id_region'] = envios['id_region'].fillna("Región Desconocida")
-envios['id_evento'] = envios['id_evento'].fillna("Evento Desconocido")
-envios['id_tipo_servicio'] = envios['id_tipo_servicio'].fillna("Servicio Desconocido")
-envios['id_ruta'] = envios['id_ruta'].fillna("Ruta Desconocida")
-
-# Aplicar codificación con LabelEncoder
-label_encoder.fit(envios['id_region'])  # Asegurarse de que se entrene con los datos correctos
-envios['id_region_encoded'] = label_encoder.transform(envios['id_region'])
+envios['id_region_encoded'] = label_encoder.fit_transform(envios['id_region'])
 envios['id_evento_encoded'] = label_encoder.fit_transform(envios['id_evento'])
 envios['id_tipo_servicio_encoded'] = label_encoder.fit_transform(envios['id_tipo_servicio'])
 envios['id_ruta_encoded'] = label_encoder.fit_transform(envios['id_ruta'])
 
-# Definir características (X) y objetivo (y)
+# Definir las características y el objetivo
 features = ['id_region_encoded', 'cantidad_envios', 'id_evento_encoded', 'id_tipo_servicio_encoded', 'id_ruta_encoded', 'mes']
 X = envios[features]
 y = envios['tarifa_promedio']
 
-# Manejar valores faltantes en el objetivo
-if y.isnull().any():
-    st.error("Existen valores nulos en la columna 'tarifa_promedio'. Corrige los datos en la fuente.")
-    st.stop()
-
-# Entrenar el modelo de Random Forest
+# Entrenar el modelo de Random Forest para regresión
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X, y)
 
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
-# Mostrar las regiones disponibles con sus nombres
-regiones_disponibles = envios['id_region'].unique()  # Obtenemos los nombres de las regiones
-region = st.selectbox('Selecciona la región', regiones_disponibles)
-
-# Mostrar las regiones disponibles
-st.write(f"Regiones disponibles: {regiones_disponibles}")
-
-# Validar que la región seleccionada está en el conjunto de datos
-try:
-    # Convertir el nombre seleccionado en su codificación
-    region_encoded = label_encoder.transform([region])[0]
-except ValueError:
-    st.error(f"La región seleccionada '{region}' no está disponible en los datos procesados.")
-    st.stop()
-
-# Selección de mes
+# Seleccionar mes y región
 mes = st.selectbox('Mes', list(range(1, 13)))
+region = st.selectbox('Región', envios['id_region'].unique())
 
-# Filtrar los datos para el mes y la región seleccionada
-datos_filtrados = envios[(envios['mes'] == mes) & (envios['id_region_encoded'] == region_encoded)]
+# Codificar la región seleccionada
+region_encoded = label_encoder.transform([region])[0]
 
-# Mostrar resultados o mensaje si no hay datos
-if not datos_filtrados.empty:
-    st.write(f'Predicción de la demanda de envíos para la región {region} en el mes {mes}')
-    st.write(datos_filtrados[['cantidad_envios', 'tarifa_promedio']])
-else:
-    st.write(f'No hay datos disponibles para la región {region} en el mes {mes}')
+# Pedir al usuario la cantidad de envíos (este dato es necesario para hacer la predicción)
+cantidad_envios = st.number_input('Cantidad de envíos', min_value=0, value=0)
+
+# Codificar las otras variables (puedes usar valores predeterminados o valores específicos para el evento y servicio)
+id_evento = "Evento Desconocido"  # Este es un valor predeterminado
+id_tipo_servicio = "Servicio Desconocido"  # Este es un valor predeterminado
+id_ruta = "Ruta Desconocida"  # Este es un valor predeterminado
+
+# Codificar estas variables
+id_evento_encoded = label_encoder.transform([id_evento])[0]
+id_tipo_servicio_encoded = label_encoder.transform([id_tipo_servicio])[0]
+id_ruta_encoded = label_encoder.transform([id_ruta])[0]
+
+# Crear el array de características para la predicción
+X_pred = np.array([[region_encoded, cantidad_envios, id_evento_encoded, id_tipo_servicio_encoded, id_ruta_encoded, mes]])
+
+# Predecir la tarifa promedio
+tarifa_predicha = rf.predict(X_pred)[0]
+
+# Mostrar la predicción
+st.write(f"Predicción de la tarifa promedio para la región {region} en el mes {mes} con {cantidad_envios} envíos: {tarifa_predicha}")
 
 
 
