@@ -8,7 +8,11 @@ import streamlit as st
 response = supabase_client.table('envios').select('*').execute()
 envios = pd.DataFrame(response.data)
 
-# Preprocesar datos
+# Cargar los nombres de las regiones
+response_regiones = supabase_client.table('regiones').select('id_region, nombre_region').execute()
+regiones = pd.DataFrame(response_regiones.data)
+
+# Preprocesar los datos
 envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
 envios['mes'] = envios['fecha_envio'].dt.month
 
@@ -34,24 +38,27 @@ predicciones = rf.predict(X)
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
-# Lista de meses
-meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+# Crear un mapeo de los nombres de región
+region_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
 
-# Seleccionar mes por nombre
-mes_nombre = st.selectbox('Mes', meses)
+# Mostrar un selectbox con los nombres de las regiones
+region_name = st.selectbox('Selecciona la región', list(region_map.values()))
 
-# Convertir el nombre del mes seleccionado al número correspondiente
-mes = meses.index(mes_nombre) + 1  # Sumar 1 porque los índices de Python comienzan en 0
+# Obtener el id_region correspondiente a la región seleccionada
+region_id = list(region_map.keys())[list(region_map.values()).index(region_name)]
 
-# Seleccionar región
-region = st.selectbox('Selecciona la región', envios['id_region'].unique())
+# Seleccionar mes
+mes = st.selectbox('Mes', ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'])
+
+# Convertir el mes seleccionado en el número correspondiente
+mes_num = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].index(mes) + 1
 
 # Filtrar los datos
-datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region)]
+datos_filtros = envios[(envios['mes'] == mes_num) & (envios['id_region'] == region_id)]
 
 # Mostrar las predicciones
 if not datos_filtros.empty:
-    st.write('Predicción de la demanda de envíos para la región', region, 'en el mes', mes_nombre)
+    st.write(f'Predicción de la demanda de envíos para la región {region_name} en el mes {mes}')
     st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio']])
 else:
-    st.write('No hay datos disponibles para la región', region, 'en el mes', mes_nombre)
+    st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
