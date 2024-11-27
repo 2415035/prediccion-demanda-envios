@@ -48,6 +48,8 @@ if y.isnull().any():
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X, y)
 
+st.write(f"Regiones disponibles en los datos: {envios['id_region'].unique()}")
+
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
