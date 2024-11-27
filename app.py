@@ -19,8 +19,16 @@ eventos = pd.DataFrame(response_eventos.data)
 response_tipo_servicio = supabase_client.table('tipos_servicio').select('id_tipo_servicio, nombre_servicio').execute()
 tipo_servicio = pd.DataFrame(response_tipo_servicio.data)
 
-response_rutas = supabase_client.table('rutas').select('id_ruta, nombre_ruta').execute()
+# Suponiendo que las rutas se definen por la región de origen y destino
+response_rutas = supabase_client.table('rutas').select('id_ruta, id_region_origen, id_region_destino').execute()
+
 rutas = pd.DataFrame(response_rutas.data)
+
+# Obtener los nombres de las regiones
+regiones_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
+
+# Agregar el nombre de la ruta concatenando los nombres de las regiones
+rutas['nombre_ruta'] = rutas['id_region_origen'].map(regiones_map) + " -> " + rutas['id_region_destino'].map(regiones_map)
 
 # Preprocesar los datos
 envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
@@ -78,14 +86,13 @@ if not datos_filtros.empty:
     st.write(f'Predicción de la demanda de envíos para la región {region_name} en el mes {mes}')
     
     # Mapear las columnas codificadas a sus nombres descriptivos
-    datos_filtros['region_nombre'] = datos_filtros['id_region'].map(region_map)
-    datos_filtros['evento_nombre'] = datos_filtros['id_evento'].map(evento_map)
-    datos_filtros['tipo_servicio_nombre'] = datos_filtros['id_tipo_servicio'].map(tipo_servicio_map)
-    datos_filtros['ruta_nombre'] = datos_filtros['id_ruta'].map(ruta_map)
+    datos_filtros.loc[:, 'region_nombre'] = datos_filtros['id_region'].map(region_map)
+    datos_filtros.loc[:, 'evento_nombre'] = datos_filtros['id_evento'].map(evento_map)
+    datos_filtros.loc[:, 'tipo_servicio_nombre'] = datos_filtros['id_tipo_servicio'].map(tipo_servicio_map)
+    datos_filtros.loc[:, 'ruta_nombre'] = datos_filtros['id_ruta'].map(ruta_map)
     
     # Mostrar las columnas con nombres descriptivos y las predicciones
     datos_filtros['prediccion_demanda'] = predicciones[:len(datos_filtros)]  # Asegurarse de que el tamaño sea correcto
     st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio', 'region_nombre', 'evento_nombre', 'tipo_servicio_nombre', 'ruta_nombre', 'prediccion_demanda']])
 else:
     st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
-
