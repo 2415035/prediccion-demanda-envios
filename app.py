@@ -40,7 +40,7 @@ envios['id_ruta_encoded'] = label_encoder_ruta.fit_transform(envios['id_ruta'])
 # Crear mapeos para las categorías
 region_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
 evento_map = dict(zip(eventos['id_evento'], eventos['nombre_evento']))
-tipo_servicio_map = dict(zip(tipo_servicio['id_tipo_servicio'], tipo_servicio['nombre_tipo_servicio']))
+tipo_servicio_map = dict(zip(tipo_servicio['id_tipo_servicio'], tipo_servicio['nombre_servicio']))
 ruta_map = dict(zip(rutas['id_ruta'], rutas['nombre_ruta']))
 
 # Definir las características y el objetivo
@@ -83,7 +83,9 @@ if not datos_filtros.empty:
     datos_filtros['tipo_servicio_nombre'] = datos_filtros['id_tipo_servicio'].map(tipo_servicio_map)
     datos_filtros['ruta_nombre'] = datos_filtros['id_ruta'].map(ruta_map)
     
-    # Mostrar las columnas con nombres descriptivos
-    st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio', 'region_nombre', 'evento_nombre', 'tipo_servicio_nombre', 'ruta_nombre']])
+    # Mostrar las columnas con nombres descriptivos y las predicciones
+    datos_filtros['prediccion_demanda'] = predicciones[:len(datos_filtros)]  # Asegurarse de que el tamaño sea correcto
+    st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio', 'region_nombre', 'evento_nombre', 'tipo_servicio_nombre', 'ruta_nombre', 'prediccion_demanda']])
 else:
     st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
+
