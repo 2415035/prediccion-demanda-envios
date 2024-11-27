@@ -19,57 +19,62 @@ envios['mes'] = envios['fecha_envio'].dt.month
 # Verificar las columnas iniciales
 st.write("Columnas en el DataFrame de envios:", envios.columns)
 
-# Crear un diccionario que mapea el id_region a nombre de la región
-id_region_to_nombre = dict(zip(regiones['id_region'], regiones['nombre_region']))
+# Codificar la columna 'id_region' antes de usarla en el modelo
+label_encoder_region = LabelEncoder()
+envios['id_region_encoded'] = label_encoder_region.fit_transform(envios['id_region'])
 
-# Mostrar el selector de región con los nombres
-region_names = list(id_region_to_nombre.values())  # Nombres de las regiones
-region = st.selectbox('Región', region_names)
-
-# Convertir el nombre de la región seleccionado de vuelta al id_region
-region_id = [key for key, value in id_region_to_nombre.items() if value == region][0]
-
-# Verificar si las columnas de codificación existen
-if 'id_evento' in envios.columns and 'id_tipo_servicio' in envios.columns and 'id_ruta' in envios.columns:
-    # Codificar las columnas categóricas
+# Codificar otras columnas categóricas necesarias
+if 'id_evento' in envios.columns:
     label_encoder_evento = LabelEncoder()
     envios['id_evento_encoded'] = label_encoder_evento.fit_transform(envios['id_evento'])
+else:
+    st.write("Falta la columna 'id_evento' en el DataFrame")
 
+if 'id_tipo_servicio' in envios.columns:
     label_encoder_servicio = LabelEncoder()
     envios['id_tipo_servicio_encoded'] = label_encoder_servicio.fit_transform(envios['id_tipo_servicio'])
+else:
+    st.write("Falta la columna 'id_tipo_servicio' en el DataFrame")
 
+if 'id_ruta' in envios.columns:
     label_encoder_ruta = LabelEncoder()
     envios['id_ruta_encoded'] = label_encoder_ruta.fit_transform(envios['id_ruta'])
 else:
-    st.write("Faltan columnas necesarias para la codificación.")
+    st.write("Falta la columna 'id_ruta' en el DataFrame")
 
 # Verificar las columnas después de la codificación
 st.write("Columnas después de la codificación:", envios.columns)
 
 # Definir las características y el objetivo
 features = ['id_region_encoded', 'cantidad_envios', 'id_evento_encoded', 'id_tipo_servicio_encoded', 'id_ruta_encoded', 'mes']
-X = envios[features]
-y = envios['tarifa_promedio']
 
-# Entrenar el modelo de Random Forest para regresión
-rf = RandomForestRegressor(n_estimators=100, random_state=42)
-rf.fit(X, y)
-
-# Predicciones
-predicciones = rf.predict(X)
-
-# Streamlit para mostrar la aplicación
-st.title('Predicción de la Demanda de Envíos por Región y Mes')
-
-# Seleccionar mes y región
-mes = st.selectbox('Mes', list(range(1, 13)))
-
-# Filtrar los datos
-datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region_id)]
-
-# Mostrar las predicciones
-if not datos_filtros.empty:
-    st.write('Predicción de la demanda de envíos para la región', region, 'en el mes', mes)
-    st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio']])
+# Verificar si todas las características necesarias están presentes
+missing_features = [feature for feature in features if feature not in envios.columns]
+if missing_features:
+    st.write(f"Faltan las siguientes características: {missing_features}")
 else:
-    st.write('No hay datos disponibles para la región', region, 'en el mes', mes)
+    X = envios[features]
+    y = envios['tarifa_promedio']
+
+    # Entrenar el modelo de Random Forest para regresión
+    rf = RandomForestRegressor(n_estimators=100, random_state=42)
+    rf.fit(X, y)
+
+    # Predicciones
+    predicciones = rf.predict(X)
+
+    # Streamlit para mostrar la aplicación
+    st.title('Predicción de la Demanda de Envíos por Región y Mes')
+
+    # Seleccionar mes y región
+    mes = st.selectbox('Mes', list(range(1, 13)))
+
+    # Filtrar los datos
+    datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region_id)]
+
+    # Mostrar las predicciones
+    if not datos_filtros.empty:
+        st.write('Predicción de la demanda de envíos para la región', region, 'en el mes', mes)
+        st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio']])
+    else:
+        st.write('No hay datos disponibles para la región', region, 'en el mes', mes)
