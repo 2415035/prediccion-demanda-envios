@@ -34,10 +34,16 @@ predicciones = rf.predict(X)
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
-# Seleccionar mes y región
-mes = st.selectbox('Mes', list(range(1, 13)))
+# Lista de meses
+meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
-# Aquí corregimos la parte del selectbox de región
+# Seleccionar mes por nombre
+mes_nombre = st.selectbox('Mes', meses)
+
+# Convertir el nombre del mes seleccionado al número correspondiente
+mes = meses.index(mes_nombre) + 1  # Sumar 1 porque los índices de Python comienzan en 0
+
+# Seleccionar región
 region = st.selectbox('Selecciona la región', envios['id_region'].unique())
 
 # Filtrar los datos
@@ -45,8 +51,7 @@ datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region)]
 
 # Mostrar las predicciones
 if not datos_filtros.empty:
-    st.write('Predicción de la demanda de envíos para la región', region, 'en el mes', mes)
+    st.write('Predicción de la demanda de envíos para la región', region, 'en el mes', mes_nombre)
     st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio']])
 else:
-    st.write('No hay datos disponibles para la región', region, 'en el mes', mes)
-
+    st.write('No hay datos disponibles para la región', region, 'en el mes', mes_nombre)
