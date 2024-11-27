@@ -17,11 +17,21 @@ envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
 envios['mes'] = envios['fecha_envio'].dt.month
 
 # Codificar las columnas categóricas
-label_encoder = LabelEncoder()
-envios['id_region_encoded'] = label_encoder.fit_transform(envios['id_region'])
-envios['id_evento_encoded'] = label_encoder.fit_transform(envios['id_evento'])
-envios['id_tipo_servicio_encoded'] = label_encoder.fit_transform(envios['id_tipo_servicio'])
-envios['id_ruta_encoded'] = label_encoder.fit_transform(envios['id_ruta'])
+label_encoder_region = LabelEncoder()
+label_encoder_evento = LabelEncoder()
+label_encoder_tipo_servicio = LabelEncoder()
+label_encoder_ruta = LabelEncoder()
+
+envios['id_region_encoded'] = label_encoder_region.fit_transform(envios['id_region'])
+envios['id_evento_encoded'] = label_encoder_evento.fit_transform(envios['id_evento'])
+envios['id_tipo_servicio_encoded'] = label_encoder_tipo_servicio.fit_transform(envios['id_tipo_servicio'])
+envios['id_ruta_encoded'] = label_encoder_ruta.fit_transform(envios['id_ruta'])
+
+# Crear un mapeo de los nombres de región, evento, tipo de servicio y ruta
+region_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
+evento_map = dict(zip(envios['id_evento'].unique(), label_encoder_evento.classes_))
+tipo_servicio_map = dict(zip(envios['id_tipo_servicio'].unique(), label_encoder_tipo_servicio.classes_))
+ruta_map = dict(zip(envios['id_ruta'].unique(), label_encoder_ruta.classes_))
 
 # Definir las características y el objetivo
 features = ['id_region_encoded', 'cantidad_envios', 'id_evento_encoded', 'id_tipo_servicio_encoded', 'id_ruta_encoded', 'mes']
@@ -37,9 +47,6 @@ predicciones = rf.predict(X)
 
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
-
-# Crear un mapeo de los nombres de región
-region_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
 
 # Mostrar un selectbox con los nombres de las regiones
 region_name = st.selectbox('Selecciona la región', list(region_map.values()))
@@ -59,6 +66,14 @@ datos_filtros = envios[(envios['mes'] == mes_num) & (envios['id_region'] == regi
 # Mostrar las predicciones
 if not datos_filtros.empty:
     st.write(f'Predicción de la demanda de envíos para la región {region_name} en el mes {mes}')
-    st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio']])
+    
+    # Agregar las columnas con los nombres descriptivos en lugar de los valores codificados
+    datos_filtros['region_nombre'] = datos_filtros['id_region'].map(region_map)
+    datos_filtros['evento_nombre'] = datos_filtros['id_evento'].map(evento_map)
+    datos_filtros['tipo_servicio_nombre'] = datos_filtros['id_tipo_servicio'].map(tipo_servicio_map)
+    datos_filtros['ruta_nombre'] = datos_filtros['id_ruta'].map(ruta_map)
+    
+    st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio', 'region_nombre', 'evento_nombre', 'tipo_servicio_nombre', 'ruta_nombre']])
 else:
     st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
+
