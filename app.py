@@ -51,11 +51,8 @@ rf.fit(X, y)
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
-# Crear un mapeo entre las regiones codificadas y sus nombres
-regiones_map = dict(zip(envios['id_region_encoded'], envios['id_region']))
-
-# Mostrar las regiones disponibles (con nombres)
-regiones_disponibles = list(regiones_map.values())
+# Mostrar las regiones disponibles con sus nombres
+regiones_disponibles = envios['id_region'].unique()  # Obtenemos los nombres de las regiones
 region = st.selectbox('Selecciona la región', regiones_disponibles)
 
 # Mostrar las regiones disponibles
@@ -81,6 +78,7 @@ if not datos_filtrados.empty:
     st.write(datos_filtrados[['cantidad_envios', 'tarifa_promedio']])
 else:
     st.write(f'No hay datos disponibles para la región {region} en el mes {mes}')
+
 
 
 
