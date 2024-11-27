@@ -2,6 +2,7 @@ import pandas as pd
 from supabase_config import supabase_client
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 import streamlit as st
 
 # Cargar datos de Supabase
@@ -54,11 +55,16 @@ ruta_map = dict(zip(rutas['id_ruta'], rutas['nombre_ruta']))
 # Definir las características y el objetivo
 features = ['id_region_encoded', 'cantidad_envios', 'id_evento_encoded', 'id_tipo_servicio_encoded', 'id_ruta_encoded', 'mes']
 X = envios[features]
-y = envios['tarifa_promedio']
+y = envios['cantidad_envios']  # Cambiar a 'cantidad_envios' para predecir la demanda
 
 # Entrenar el modelo de Random Forest para regresión
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X, y)
+
+# Evaluar el modelo (opcional)
+y_pred = rf.predict(X)
+print("MAE:", mean_absolute_error(y, y_pred))
+print("RMSE:", mean_squared_error(y, y_pred, squared=False))
 
 # Predicciones
 predicciones = rf.predict(X)
