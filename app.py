@@ -48,24 +48,29 @@ if y.isnull().any():
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X, y)
 
-st.write(f"Región seleccionada: {region}")
-
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
-# Seleccionar mes y región
-mes = st.selectbox('Mes', list(range(1, 13)))
-region = st.selectbox('Región', envios['id_region'].unique())
+# Crear un mapeo entre las regiones codificadas y sus nombres
+regiones_map = dict(zip(envios['id_region_encoded'], envios['id_region']))
+
+# Mostrar las regiones disponibles (con nombres)
+regiones_disponibles = list(regiones_map.values())
+region = st.selectbox('Selecciona la región', regiones_disponibles)
 
 # Mostrar las regiones disponibles
-st.write(f"Regiones disponibles: {envios['id_region'].unique()}")
+st.write(f"Regiones disponibles: {regiones_disponibles}")
 
 # Validar que la región seleccionada está en el conjunto de datos
 try:
+    # Convertir el nombre seleccionado en su codificación
     region_encoded = label_encoder.transform([region])[0]
 except ValueError:
     st.error(f"La región seleccionada '{region}' no está disponible en los datos procesados.")
     st.stop()
+
+# Selección de mes
+mes = st.selectbox('Mes', list(range(1, 13)))
 
 # Filtrar los datos para el mes y la región seleccionada
 datos_filtrados = envios[(envios['mes'] == mes) & (envios['id_region_encoded'] == region_encoded)]
@@ -76,6 +81,7 @@ if not datos_filtrados.empty:
     st.write(datos_filtrados[['cantidad_envios', 'tarifa_promedio']])
 else:
     st.write(f'No hay datos disponibles para la región {region} en el mes {mes}')
+
 
 
 
