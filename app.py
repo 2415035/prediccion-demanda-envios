@@ -9,19 +9,26 @@ import numpy as np
 response = supabase_client.table('envios').select('*').execute()
 envios = pd.DataFrame(response.data)
 
+# Cargar datos de regiones desde Supabase (para tener los nombres de las regiones)
+response_regiones = supabase_client.table('regiones').select('*').execute()
+regiones = pd.DataFrame(response_regiones.data)
+
 # Preprocesar datos
 envios['fecha_envio'] = pd.to_datetime(envios['fecha_envio'])
 envios['mes'] = envios['fecha_envio'].dt.month
 
-# Codificar las columnas categóricas
-label_encoder = LabelEncoder()
-envios['id_region_encoded'] = label_encoder.fit_transform(envios['id_region'])
-envios['id_evento_encoded'] = label_encoder.fit_transform(envios['id_evento'])
-envios['id_tipo_servicio_encoded'] = label_encoder.fit_transform(envios['id_tipo_servicio'])
-envios['id_ruta_encoded'] = label_encoder.fit_transform(envios['id_ruta'])
+# Crear un diccionario que mapea el id_region a nombre de la región
+id_region_to_nombre = dict(zip(regiones['id_region'], regiones['nombre_region']))
 
-# Crear un diccionario para mapear códigos de región a nombres
-region_to_name = dict(zip(envios['id_region_encoded'], envios['id_region']))
+# Mostrar el selector de región con los nombres
+region_names = list(id_region_to_nombre.values())  # Nombres de las regiones
+region = st.selectbox('Región', region_names)
+
+# Convertir el nombre de la región seleccionado de vuelta al id_region
+region_id = [key for key, value in id_region_to_nombre.items() if value == region][0]
+
+# Codificar las columnas categóricas si es necesario
+envios['id_region_encoded'] = envios['id_region'].map(id_region_to_nombre)
 
 # Definir las características y el objetivo
 features = ['id_region_encoded', 'cantidad_envios', 'id_evento_encoded', 'id_tipo_servicio_encoded', 'id_ruta_encoded', 'mes']
@@ -32,36 +39,21 @@ y = envios['tarifa_promedio']
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X, y)
 
+# Predicciones
+predicciones = rf.predict(X)
+
 # Streamlit para mostrar la aplicación
 st.title('Predicción de la Demanda de Envíos por Región y Mes')
 
 # Seleccionar mes y región
 mes = st.selectbox('Mes', list(range(1, 13)))
 
-# Mostrar el selector de región con los nombres
-region_names = list(region_to_name.values())  # Nombres de regiones
-region = st.selectbox('Región', region_names)
+# Filtrar los datos
+datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region_id)]
 
-# Codificar la región seleccionada
-region_encoded = label_encoder.transform([region])[0]
-
-# Pedir al usuario la cantidad de envíos
-cantidad_envios = st.number_input('Cantidad de envíos', min_value=0, value=0)
-
-# Codificar las otras variables
-id_evento = "Evento Desconocido"
-id_tipo_servicio = "Servicio Desconocido"
-id_ruta = "Ruta Desconocida"
-
-id_evento_encoded = label_encoder.transform([id_evento])[0]
-id_tipo_servicio_encoded = label_encoder.transform([id_tipo_servicio])[0]
-id_ruta_encoded = label_encoder.transform([id_ruta])[0]
-
-# Crear el array de características para la predicción
-X_pred = np.array([[region_encoded, cantidad_envios, id_evento_encoded, id_tipo_servicio_encoded, id_ruta_encoded, mes]])
-
-# Predecir la tarifa promedio
-tarifa_predicha = rf.predict(X_pred)[0]
-
-# Mostrar la predicción
-st.write(f"Predicción de la tarifa promedio para la región {region} en el mes {mes} con {cantidad_envios} envíos: {tarifa_predicha}")
+# Mostrar las predicciones
+if not datos_filtros.empty:
+    st.write('Predicción de la demanda de envíos para la región', region, 'en el mes', mes)
+    st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio']])
+else:
+    st.write('No hay datos disponibles para la región', region, 'en el mes', mes)
