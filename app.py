@@ -21,14 +21,15 @@ envios['mes'] = envios['fecha_envio'].dt.month
 # Codificar columnas categóricas
 label_encoder = LabelEncoder()
 
-# Asegurar que todos los valores están presentes antes del fit
+# Asegurarse de que todos los valores están presentes antes del fit
 envios['id_region'] = envios['id_region'].fillna("Región Desconocida")
 envios['id_evento'] = envios['id_evento'].fillna("Evento Desconocido")
 envios['id_tipo_servicio'] = envios['id_tipo_servicio'].fillna("Servicio Desconocido")
 envios['id_ruta'] = envios['id_ruta'].fillna("Ruta Desconocida")
 
 # Aplicar codificación con LabelEncoder
-envios['id_region_encoded'] = label_encoder.fit_transform(envios['id_region'])
+label_encoder.fit(envios['id_region'])  # Asegurarse de que se entrene con los datos correctos
+envios['id_region_encoded'] = label_encoder.transform(envios['id_region'])
 envios['id_evento_encoded'] = label_encoder.fit_transform(envios['id_evento'])
 envios['id_tipo_servicio_encoded'] = label_encoder.fit_transform(envios['id_tipo_servicio'])
 envios['id_ruta_encoded'] = label_encoder.fit_transform(envios['id_ruta'])
@@ -54,6 +55,9 @@ st.title('Predicción de la Demanda de Envíos por Región y Mes')
 mes = st.selectbox('Mes', list(range(1, 13)))
 region = st.selectbox('Región', envios['id_region'].unique())
 
+# Mostrar las regiones disponibles
+st.write(f"Regiones disponibles: {envios['id_region'].unique()}")
+
 # Validar que la región seleccionada está en el conjunto de datos
 try:
     region_encoded = label_encoder.transform([region])[0]
@@ -70,6 +74,7 @@ if not datos_filtrados.empty:
     st.write(datos_filtrados[['cantidad_envios', 'tarifa_promedio']])
 else:
     st.write(f'No hay datos disponibles para la región {region} en el mes {mes}')
+
 
 
 
