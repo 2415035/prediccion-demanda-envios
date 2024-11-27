@@ -69,8 +69,9 @@ else:
     # Seleccionar mes y región
     mes = st.selectbox('Mes', list(range(1, 13)))
 
-    # Filtrar los datos
-    datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region_id)]
+    # Filtrar los datos usando 'region' en lugar de 'region_id'
+    datos_filtros = envios[(envios['mes'] == mes) & (envios['id_region'] == region)]
+
 
     # Mostrar las predicciones
     if not datos_filtros.empty:
