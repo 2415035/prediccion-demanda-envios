@@ -104,7 +104,14 @@ if not datos_filtros.empty:
     st.write(datos_filtros[['cantidad_envios', 'region_nombre', 'evento_nombre', 'tipo_servicio_nombre', 'ruta_nombre', 'prediccion_demanda']])
     
     # Crear un gráfico de barras con Plotly
-   
+    fig = px.bar(
+        datos_filtros,
+        x='ruta_nombre',
+        y='prediccion_demanda',
+        color='tipo_servicio_nombre',
+        title='Predicción de la Demanda por Ruta',
+        labels={'prediccion_demanda': 'Demanda Predicha', 'ruta_nombre': 'Ruta'}
+    )
     # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig)
 else:
