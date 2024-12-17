@@ -13,31 +13,10 @@ envios = pd.DataFrame(response.data)
 response_regiones = supabase_client.table('regiones').select('id_region, nombre_region').execute()
 regiones = pd.DataFrame(response_regiones.data)
 
-# Mostrar las primeras filas y las columnas de 'regiones' para asegurarse de que se cargan correctamente
-st.write("Primeras filas de 'regiones':")
-st.write(regiones.head())
+# Revisar las columnas de la tabla regiones
+st.write("Columnas de la tabla regiones:", regiones.columns)
 
-# Mostrar los nombres exactos de las columnas en 'regiones'
-st.write("Nombres de las columnas en 'regiones':")
-st.write(regiones.columns.tolist())
-
-# Asegurarse de que las columnas sean de tipo string
-# Convertir todos los nombres de las columnas a string (si no lo son ya)
-regiones.columns = regiones.columns.astype(str)
-
-# Limpiar los nombres de las columnas (eliminar espacios adicionales)
-regiones.columns = regiones.columns.str.strip()
-
-# Verificar si la columna 'id_region' está presente
-if 'id_region' in regiones.columns:
-    st.write("La columna 'id_region' está presente")
-else:
-    st.write("La columna 'id_region' NO está presente")
-
-# Crear el mapeo de regiones
-regiones_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
-
-# Cargar los nombres de eventos, tipo_servicio y rutas
+# Cargar los nombres de eventos, tipo_servicio y rutas desde la base de datos o definidos en el código
 response_eventos = supabase_client.table('eventos').select('id_evento, nombre_evento').execute()
 eventos = pd.DataFrame(response_eventos.data)
 
@@ -47,6 +26,9 @@ tipo_servicio = pd.DataFrame(response_tipo_servicio.data)
 # Suponiendo que las rutas se definen por la región de origen y destino
 response_rutas = supabase_client.table('rutas').select('id_ruta, id_region_origen, id_region_destino').execute()
 rutas = pd.DataFrame(response_rutas.data)
+
+# Obtener los nombres de las regiones
+regiones_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
 
 # Agregar el nombre de la ruta concatenando los nombres de las regiones
 rutas['nombre_ruta'] = rutas['id_region_origen'].map(regiones_map) + " -> " + rutas['id_region_destino'].map(regiones_map)
