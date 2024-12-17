@@ -117,3 +117,4 @@ if not datos_filtros.empty:
 else:
     st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
 
+
