@@ -22,6 +22,9 @@ st.write(regiones.head())
 st.write("Nombres de las columnas en 'regiones':")
 st.write(regiones.columns.tolist())
 
+# Asegurarse de que las columnas sean de tipo string
+regiones = regiones.applymap(str)
+
 # Limpiar los nombres de las columnas (eliminar espacios adicionales)
 regiones.columns = regiones.columns.str.strip()
 
