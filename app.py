@@ -2,6 +2,7 @@ import pandas as pd
 from supabase_config import supabase_client
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 import streamlit as st
 import plotly.express as px
 
@@ -13,7 +14,27 @@ envios = pd.DataFrame(response.data)
 response_regiones = supabase_client.table('regiones').select('id_region, nombre_region').execute()
 regiones = pd.DataFrame(response_regiones.data)
 
-# Cargar los nombres de eventos, tipo_servicio y rutas desde la base de datos o definidos en el código
+# Mostrar las primeras filas y las columnas de 'regiones' para asegurarse de que se cargan correctamente
+st.write("Primeras filas de 'regiones':")
+st.write(regiones.head())
+
+# Mostrar los nombres exactos de las columnas en 'regiones'
+st.write("Nombres de las columnas en 'regiones':")
+st.write(regiones.columns.tolist())
+
+# Limpiar los nombres de las columnas (eliminar espacios adicionales)
+regiones.columns = regiones.columns.str.strip()
+
+# Verificar si la columna 'id_region' está presente
+if 'id_region' in regiones.columns:
+    st.write("La columna 'id_region' está presente")
+else:
+    st.write("La columna 'id_region' NO está presente")
+
+# Crear el mapeo de regiones
+regiones_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
+
+# Cargar los nombres de eventos, tipo_servicio y rutas
 response_eventos = supabase_client.table('eventos').select('id_evento, nombre_evento').execute()
 eventos = pd.DataFrame(response_eventos.data)
 
@@ -23,9 +44,6 @@ tipo_servicio = pd.DataFrame(response_tipo_servicio.data)
 # Suponiendo que las rutas se definen por la región de origen y destino
 response_rutas = supabase_client.table('rutas').select('id_ruta, id_region_origen, id_region_destino').execute()
 rutas = pd.DataFrame(response_rutas.data)
-
-# Obtener los nombres de las regiones
-regiones_map = dict(zip(regiones['id_region'], regiones['nombre_region']))
 
 # Agregar el nombre de la ruta concatenando los nombres de las regiones
 rutas['nombre_ruta'] = rutas['id_region_origen'].map(regiones_map) + " -> " + rutas['id_region_destino'].map(regiones_map)
@@ -86,15 +104,13 @@ if not datos_filtros.empty:
     st.write(f'Predicción de la demanda de envíos para la región {region_name} en el mes {mes}')
     
     # Mapear las columnas codificadas a sus nombres descriptivos
-    datos_filtros['region_nombre'] = datos_filtros['id_region'].map(region_map)
-    datos_filtros['evento_nombre'] = datos_filtros['id_evento'].map(evento_map)
-    datos_filtros['tipo_servicio_nombre'] = datos_filtros['id_tipo_servicio'].map(tipo_servicio_map)
-    datos_filtros['ruta_nombre'] = datos_filtros['id_ruta'].map(ruta_map)
-    
-    # Asegurarse de que el tamaño de las predicciones coincida con los datos filtrados
-    datos_filtros['prediccion_demanda'] = predicciones[:len(datos_filtros)]  # Asegurarse de que el tamaño sea correcto
+    datos_filtros.loc[:, 'region_nombre'] = datos_filtros['id_region'].map(region_map)
+    datos_filtros.loc[:, 'evento_nombre'] = datos_filtros['id_evento'].map(evento_map)
+    datos_filtros.loc[:, 'tipo_servicio_nombre'] = datos_filtros['id_tipo_servicio'].map(tipo_servicio_map)
+    datos_filtros.loc[:, 'ruta_nombre'] = datos_filtros['id_ruta'].map(ruta_map)
     
     # Mostrar las columnas con nombres descriptivos y las predicciones
+    datos_filtros['prediccion_demanda'] = predicciones[:len(datos_filtros)]  # Asegurarse de que el tamaño sea correcto
     st.write(datos_filtros[['cantidad_envios', 'tarifa_promedio', 'region_nombre', 'evento_nombre', 'tipo_servicio_nombre', 'ruta_nombre', 'prediccion_demanda']])
     
     # Crear un gráfico de barras con Plotly
@@ -106,10 +122,10 @@ if not datos_filtros.empty:
         title='Predicción de la Demanda por Ruta',
         labels={'prediccion_demanda': 'Demanda Predicha', 'ruta_nombre': 'Ruta'}
     )
-    
     # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig)
 else:
     st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
+
 
 
