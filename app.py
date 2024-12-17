@@ -2,7 +2,6 @@ import pandas as pd
 from supabase_config import supabase_client
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 import streamlit as st
 import plotly.express as px
 
@@ -23,7 +22,8 @@ st.write("Nombres de las columnas en 'regiones':")
 st.write(regiones.columns.tolist())
 
 # Asegurarse de que las columnas sean de tipo string
-regiones = regiones.applymap(str)
+# Convertir todos los nombres de las columnas a string (si no lo son ya)
+regiones.columns = regiones.columns.astype(str)
 
 # Limpiar los nombres de las columnas (eliminar espacios adicionales)
 regiones.columns = regiones.columns.str.strip()
@@ -129,6 +129,3 @@ if not datos_filtros.empty:
     st.plotly_chart(fig)
 else:
     st.write(f'No hay datos disponibles para la región {region_name} en el mes {mes}')
-
-
-
